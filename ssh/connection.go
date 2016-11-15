@@ -41,6 +41,9 @@ type ConnMetadata interface {
 
 	// LocalAddr returns the local address for this connection.
 	LocalAddr() net.Addr
+
+	SetAuthMethod(string, int)
+	GetAuthMethod(string) int
 }
 
 // Conn represents an SSH connection for both server and client roles.
@@ -106,6 +109,11 @@ type sshConn struct {
 	sessionID     []byte
 	clientVersion []byte
 	serverVersion []byte
+
+	// AuthMethod is a toggle of methods that have
+	// authenticated with the server. 1 for success
+	// 0 for unseen, -1 for failure (seen but failed)
+	AuthMethod map[string]int
 }
 
 func dup(src []byte) []byte {
@@ -140,4 +148,18 @@ func (c *sshConn) ClientVersion() []byte {
 
 func (c *sshConn) ServerVersion() []byte {
 	return dup(c.serverVersion)
+}
+
+func (c *sshConn) SetAuthMethod(key string, val int) {
+	if c.AuthMethod == nil {
+		c.AuthMethod = make(map[string]int)
+	}
+	c.AuthMethod[key] = val
+}
+
+func (c *sshConn) GetAuthMethod(key string) int {
+	if c.AuthMethod != nil {
+		return c.AuthMethod[key]
+	}
+	return 0
 }
